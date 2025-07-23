@@ -1,29 +1,25 @@
-export class SettingsPage {
-  visit() {
-    cy.visit('/settings');
-  }
+import PageObject from '../PageObject';
 
-  getUsernameInput() {
-    return cy.get('input[placeholder="Username"]');
-  }
+class SettingsPageObject extends PageObject {
+  url = '/settings';
 
-  getEmailInput() {
-    return cy.get('input[placeholder="Email"]');
-  }
-
-  getPasswordInput() {
-    return cy.get('input[placeholder="New Password"]');
-  }
-
-  getBioTextarea() {
-    return cy.get('textarea[placeholder="Short bio about you"]');
-  }
-
-  getUpdateButton() {
+  get updateSettingsBtn() {
     return cy.contains('button', 'Update Settings');
   }
 
-  getLogoutButton() {
-    return cy.contains('button', 'Or click here to logout.');
+  changeItem(placeholder, newValue) {
+    cy.get(`[placeholder="${placeholder}"]`).as('input');
+    cy.get('@input').clear();
+    cy.get('@input').type(newValue);
+  }
+
+  checkUrl(username) {
+    cy.url().should('include', `/profile/${username}`);
+  }
+
+  clickOnUpdateSettingsBtn() {
+    this.updateSettingsBtn.click();
   }
 }
+
+export default SettingsPageObject;

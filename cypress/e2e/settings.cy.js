@@ -1,64 +1,65 @@
 /// <reference types="cypress" />
 /// <reference types="../support" />
 
-import { SettingsPage } from '../support/pages/SettingsPage';
+import { faker } from '@faker-js/faker';
+import SettingsPage from '../support/pages/SettingsPage';
+
+const settingPage = new SettingsPage();
 
 describe('Settings page', () => {
-  const settingsPage = new SettingsPage();
-  let email;
+  let user;
 
   beforeEach(() => {
-    const timestamp = Date.now();
-    email = `liza${timestamp}@gmail.com`;
-    cy.request('POST', 'http://localhost:3000/api/users', {
-      user: {
-        username: `liza${timestamp}`,
-        email,
-        password: '1234567Qwerty',
-        bio: 'Test user bio',
-      }
+    cy.task('db:clear');
+    cy.task('generateUser').then((generateUser) => {
+      cy.login(
+        generateUser.email,
+        generateUser.username,
+        generateUser.password
+      );
+      user = generateUser;
+      cy.then(() => {
+        cy.visit('/settings');
+      });
     });
-    cy.visit('/user/login');
-    cy.get('input[placeholder="Email"]').type(email);
-    cy.get('input[placeholder="Password"]').type('1234567Qwerty');
-    cy.contains('button', 'Sign in').click();
-    cy.location('pathname', { timeout: 10000 }).should('not.include', '/login');
-    settingsPage.visit();
   });
 
-  it('should update username', () => {
-    settingsPage.getUsernameInput().clear().type('superQA_user');
-    settingsPage.getEmailInput().clear().type(email);
-    settingsPage.getPasswordInput().clear().type('1234567Qwerty');
-    settingsPage.getUpdateButton().click();
+  it('should provide an ability to update username', () => {
+    const newUsername = `${faker.person.lastName().toLocaleLowerCase()}123123`;
+
+    settingPage.changeItem('Username', `${newUsername}`);
+    settingPage.clickOnUpdateSettingsBtn();
+    settingPage.checkUrl(newUsername);
   });
 
-  it('should update bio', () => {
-    settingsPage.getBioTextarea().clear().type('I am the king of Cypress!');
-    settingsPage.getUsernameInput().clear().type('superQA_user');
-    settingsPage.getEmailInput().clear().type(email);
-    settingsPage.getPasswordInput().clear().type('1234567Qwerty');
-    settingsPage.getUpdateButton().click();
+  it('should provide an ability to update bio', () => {
+    const newBio = faker.person.bio();
+
+    settingPage.changeItem('Short bio about you', `${newBio}`);
+    settingPage.clickOnUpdateSettingsBtn();
+    settingPage.checkUrl(user.username);
   });
 
-  it('should update email', () => {
-    settingsPage.getEmailInput().clear().type(`superqa_test_${Date.now()}@gmail.com`);
-    settingsPage.getUsernameInput().clear().type('superQA_user');
-    settingsPage.getPasswordInput().clear().type('1234567Qwerty');
-    settingsPage.getUpdateButton().click();
+  it('should provide an ability to update an email', () => {
+    const newEmail = faker.internet.email();
+
+    settingPage.changeItem('Email', `${newEmail}`);
+    settingPage.clickOnUpdateSettingsBtn();
+    settingPage.checkUrl(user.username);
   });
 
-  it('should update password', () => {
-    settingsPage.getPasswordInput().type('MegaSecret123!');
-    settingsPage.getUsernameInput().clear().type('superQA_user');
-    settingsPage.getEmailInput().clear().type(email);
-    settingsPage.getUpdateButton().click();
+  it('should provide an ability to update password', () => {
+    const newPass = faker.internet.password();
+
+    settingPage.changeItem('New Password', `${newPass}`);
+    settingPage.clickOnUpdateSettingsBtn();
+    settingPage.checkUrl(user.username);
   });
 
-  it('should log out', () => {
-    settingsPage.getLogoutButton().click();
+  it('should provide an ability to log out', () => {
+    const newUsername = faker.person.fullName();
 
-    cy.url({ timeout: 10000 }).should('eq', 'http://localhost:3000/');
-    cy.contains('a', 'Sign in').should('be.visible');
+    cy.contains('button', 'Or click here to logout.').click();
+    cy.url().should('include', '/');
   });
 });
